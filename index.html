@@ -8,7 +8,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-12 0 100 100'%3E%3Crect x='6' y='6' width='64' height='88' rx='14' fill='none' stroke='%238be0c4' stroke-width='7'/%3E%3Cg fill='%238be0c4'%3E%3Crect x='18' y='26.5' width='40' height='7' rx='3.5'/%3E%3Crect x='18' y='46.5' width='15' height='7' rx='3.5'/%3E%3Crect x='43' y='46.5' width='15' height='7' rx='3.5'/%3E%3Crect x='18' y='66.5' width='40' height='7' rx='3.5'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link id="gf" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Inter:wght@700;800&family=Baloo+2:wght@700;800&family=Poppins:wght@700;800&family=Nunito:wght@700;800&family=Outfit:wght@700;800&family=Rubik:wght@700;800&family=Quicksand:wght@600;700&family=Fredoka:wght@600;700&family=Sora:wght@700;800&family=Manrope:wght@700;800&family=Space+Grotesk:wght@700&family=Lexend:wght@700;800&family=Urbanist:wght@700;800&family=Figtree:wght@700;800&family=Montserrat:wght@700;800&family=DM+Sans:wght@700;800&family=Comfortaa:wght@700&family=Josefin+Sans:wght@700&family=Archivo:wght@700;800&family=Space+Mono&display=swap" rel="stylesheet">
+<link id="gf" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Inter:wght@700;800&family=Baloo+2:wght@700;800&family=Poppins:wght@700;800&family=Nunito:wght@700;800&family=Outfit:wght@700;800&family=Rubik:wght@700;800&family=Quicksand:wght@600;700&family=Fredoka:wght@600;700&family=Sora:wght@700;800&family=Manrope:wght@700;800&family=Space+Grotesk:wght@700&family=Lexend:wght@700;800&family=Urbanist:wght@700;800&family=Figtree:wght@700;800&family=Montserrat:wght@700;800&family=DM+Sans:wght@700;800&family=Comfortaa:wght@700&family=Josefin+Sans:wght@700&family=Archivo:wght@700;800&family=Bricolage+Grotesque:wght@700;800&family=Onest:wght@700;800&family=Hanken+Grotesk:wght@700;800&family=Schibsted+Grotesk:wght@700;800&family=Gabarito:wght@700;800&family=Red+Hat+Display:wght@700;800&family=Albert+Sans:wght@700;800&family=Kanit:wght@700;800&family=Syne:wght@700;800&family=Unbounded:wght@700;800&family=Space+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
   /* logo colors — must match the JS INK/PAPER used by PNG/SVG export */
@@ -88,6 +88,21 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .export .ghost:hover{border-color:var(--muted)}
 .export button:active,.export label:active{transform:translateY(1px)}
 .export input[type=file]{display:none}
+
+.colorrow{display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+.colorrow .ovr{font-family:inherit;font-size:12.5px;padding:0 14px;height:44px;border-radius:11px;
+  border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;transition:.12s}
+.colorrow .ovr:hover{border-color:var(--muted)}
+.colorrow .ovr.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.colorrow .ovr:active{transform:translateY(1px)}
+.colorrow input[type=color]{-webkit-appearance:none;appearance:none;width:52px;height:44px;padding:0;
+  border:1px solid var(--line);border-radius:11px;background:var(--surface);cursor:pointer}
+.colorrow input[type=color]::-webkit-color-swatch-wrapper{padding:5px}
+.colorrow input[type=color]::-webkit-color-swatch{border:none;border-radius:7px}
+.colorrow input[type=color]::-moz-color-swatch{border:none;border-radius:7px}
+.colorrow input[type=text]{font-family:inherit;font-size:12.5px;color:var(--fg);background:var(--surface);
+  border:1px solid var(--line);border-radius:11px;padding:0 12px;height:44px;width:100px;text-transform:uppercase}
+.colorrow input[type=text]:focus{border-color:var(--muted);outline:none}
 .status{font-size:12px;color:var(--muted);min-height:16px;margin-top:4px}
 
 .foot{margin-top:24px;border-top:1px solid var(--line);padding-top:16px;font-size:12px;color:var(--muted);line-height:1.6}
@@ -145,6 +160,15 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
     </div>
 
     <div class="block">
+      <div class="rowlabel">mark color</div>
+      <div class="colorrow">
+        <button type="button" class="ovr" id="markOverride">mark color: theme</button>
+        <input type="color" id="markColor" value="#8be0c4" aria-label="mark color picker">
+        <input type="text" id="markHex" value="#8BE0C4" spellcheck="false" maxlength="7" aria-label="mark color hex">
+      </div>
+    </div>
+
+    <div class="block">
       <div class="rowlabel">export &amp; import</div>
       <div class="export">
         <button id="pngLight" class="ghost">PNG · light</button>
@@ -195,9 +219,19 @@ const FONTS=[
   {fam:"Comfortaa",         w:700, tag:"bubbly"},
   {fam:"Josefin Sans",      w:700, tag:"elegant"},
   {fam:"Archivo",           w:800, tag:"grotesk"},
+  {fam:"Bricolage Grotesque", w:800, tag:"editorial"},
+  {fam:"Onest",             w:800, tag:"crisp"},
+  {fam:"Hanken Grotesk",    w:800, tag:"humanist"},
+  {fam:"Schibsted Grotesk", w:800, tag:"news"},
+  {fam:"Gabarito",          w:800, tag:"rounded"},
+  {fam:"Red Hat Display",   w:800, tag:"corporate"},
+  {fam:"Albert Sans",       w:800, tag:"geometric"},
+  {fam:"Kanit",             w:800, tag:"bold"},
+  {fam:"Syne",              w:800, tag:"display"},
+  {fam:"Unbounded",         w:800, tag:"wide"},
 ];
 const GF_HREF=document.getElementById('gf').href;
-const DEFAULTS={layout:"left",size:115,gap:22,wt:55,rad:11,vert:0,broken:true,dark:true,fontIdx:0};
+const DEFAULTS={layout:"left",size:115,gap:22,wt:55,rad:11,vert:0,broken:true,dark:true,markOverride:false,markColor:"#8be0c4",fontIdx:0};
 const LS_KEY="delink-studio-v1";
 const S=Object.assign({},DEFAULTS);
 const measCtx=document.createElement('canvas').getContext('2d');
@@ -206,7 +240,7 @@ const measCtx=document.createElement('canvas').getContext('2d');
 function saveState(){try{localStorage.setItem(LS_KEY,JSON.stringify(S));}catch(e){}}
 function loadState(){
   try{const o=JSON.parse(localStorage.getItem(LS_KEY)||"null");if(!o)return;
-    ['layout','size','gap','wt','rad','vert','broken','dark','fontIdx'].forEach(k=>{if(k in o)S[k]=o[k];});
+    ['layout','size','gap','wt','rad','vert','broken','dark','markOverride','markColor','fontIdx'].forEach(k=>{if(k in o)S[k]=o[k];});
     if(!(S.fontIdx>=0&&S.fontIdx<FONTS.length))S.fontIdx=0;
   }catch(e){}
 }
@@ -221,8 +255,9 @@ function markShapes(color){
   return `<rect x="${(w/2+2).toFixed(1)}" y="${(w/2+2).toFixed(1)}" width="${(72-w).toFixed(1)}" height="${(96-w).toFixed(1)}" rx="${rx}" fill="none" stroke="${color}" stroke-width="${w.toFixed(1)}"/>`+
          `<g fill="${color}"><rect x="18" y="${(30-t/2).toFixed(1)}" width="40" height="${t.toFixed(1)}" rx="${lr}"/>${mid}<rect x="18" y="${(70-t/2).toFixed(1)}" width="40" height="${t.toFixed(1)}" rx="${lr}"/></g>`;
 }
+function markCol(fallback){return S.markOverride?S.markColor:fallback;}
 function markSVG_dom(cssHeight){
-  return `<svg viewBox="0 0 76 100" xmlns="http://www.w3.org/2000/svg" style="height:${cssHeight}">${markShapes('currentColor')}</svg>`;
+  return `<svg viewBox="0 0 76 100" xmlns="http://www.w3.org/2000/svg" style="height:${cssHeight}">${markShapes(markCol('currentColor'))}</svg>`;
 }
 function markStandalone(color){
   return `<svg xmlns="http://www.w3.org/2000/svg" width="76" height="100" viewBox="0 0 76 100">${markShapes(color)}</svg>`;
@@ -310,7 +345,7 @@ async function renderCanvas(theme){
   const ctx=cv.getContext('2d');
   const bg=theme==='dark'?INK:PAPER, fg=theme==='dark'?PAPER:INK;
   ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
-  const markImg=await loadImg(markStandalone(fg));
+  const markImg=await loadImg(markStandalone(markCol(fg)));
   ctx.fillStyle=fg; ctx.textBaseline='middle'; ctx.textAlign='left';
   for(const op of ops){
     if(op.t==='text'){ctx.font=`${f.w} ${fontPx}px "${f.fam}"`;ctx.fillText(op.s,op.x,op.y);}
@@ -326,7 +361,7 @@ function renderSVGfile(){
   for(const op of ops){
     if(op.t==='text') body+=`<text x="${op.x.toFixed(1)}" y="${op.y.toFixed(1)}" font-family="'${f.fam}',sans-serif" font-weight="${f.w}" font-size="${fontPx}" dominant-baseline="central" fill="${fg}">${op.s}</text>`;
     else if(op.t==='rect') body+=`<rect x="${op.x.toFixed(1)}" y="${op.y.toFixed(1)}" width="${op.w.toFixed(1)}" height="${op.h.toFixed(1)}" rx="${op.r.toFixed(1)}" fill="${fg}"/>`;
-    else if(op.t==='mark') body+=`<g transform="translate(${op.x.toFixed(1)} ${op.y.toFixed(1)}) scale(${(op.w/76).toFixed(4)} ${(op.h/100).toFixed(4)})">${markShapes(fg)}</g>`;
+    else if(op.t==='mark') body+=`<g transform="translate(${op.x.toFixed(1)} ${op.y.toFixed(1)}) scale(${(op.w/76).toFixed(4)} ${(op.h/100).toFixed(4)})">${markShapes(markCol(fg))}</g>`;
   }
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.ceil(W)}" height="${Math.ceil(H)}" viewBox="0 0 ${Math.ceil(W)} ${Math.ceil(H)}"><defs><style>@import url('${GF_HREF}');</style></defs>${body}</svg>`;
 }
@@ -350,7 +385,7 @@ async function renderMarkCanvas(theme){
   const ctx=cv.getContext('2d');
   const bg=theme==='dark'?INK:PAPER, fg=theme==='dark'?PAPER:INK;
   ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
-  const img=await loadImg(markStandalone(fg));
+  const img=await loadImg(markStandalone(markCol(fg)));
   ctx.drawImage(img,pad,pad,markW,markH);
   return cv;
 }
@@ -361,7 +396,7 @@ async function exportMarkPNG(theme){
 }
 function renderMarkSVGfile(){
   const fg=INK, markW=76, markH=100, pad=12, W=markW+2*pad, H=markH+2*pad;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><g transform="translate(${pad} ${pad})">${markShapes(fg)}</g></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><g transform="translate(${pad} ${pad})">${markShapes(markCol(fg))}</g></svg>`;
 }
 function exportMarkSVG(){const svg=renderMarkSVGfile();dl(URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'})),'de-link-mark.svg');mStatus('saved de-link-mark.svg');}
 function exportCfg(){const j=JSON.stringify({...S,font:FONTS[S.fontIdx].fam,_v:1},null,2);dl(URL.createObjectURL(new Blob([j],{type:'application/json'})),'de-link-config.json');status('saved de-link-config.json');}
@@ -369,7 +404,7 @@ function importCfg(file){
   const r=new FileReader();
   r.onload=()=>{try{
     const o=JSON.parse(r.result);
-    ['layout','size','gap','wt','rad','vert','broken','dark'].forEach(k=>{if(k in o)S[k]=o[k];});
+    ['layout','size','gap','wt','rad','vert','broken','dark','markOverride','markColor'].forEach(k=>{if(k in o)S[k]=o[k];});
     if('fontIdx' in o) S.fontIdx=o.fontIdx;
     if('font' in o){const i=FONTS.findIndex(f=>f.fam===o.font);if(i>=0)S.fontIdx=i;}
     if(!(S.fontIdx>=0&&S.fontIdx<FONTS.length))S.fontIdx=0;
@@ -399,12 +434,25 @@ function syncControls(){
     if(t==='broken')b.textContent='broken line: '+(S.broken?'on':'off');
     if(t==='dark')b.textContent='theme: '+(S.dark?'dark':'light');
     });
+  syncColor();
   buildFontRow();
 }
 
 document.querySelectorAll('#layout button').forEach(b=>b.onclick=()=>{S.layout=b.dataset.v;document.querySelectorAll('#layout button').forEach(x=>x.classList.toggle('on',x===b));render();});
 SLIDERS.forEach(([id,out,fmt])=>{const el=document.getElementById(id),o=document.getElementById(out);const u=()=>{let v=+el.value;if(id==='vert'&&Math.abs(v)<=5){v=0;el.value=0;}S[id]=v;o.textContent=fmt(v);render();};el.addEventListener('input',u);});
 document.getElementById('vertReset').onclick=()=>{S.vert=0;const el=document.getElementById('vert');el.value=0;document.getElementById('vVert').textContent='0';render();};
+
+/* ---- mark color override ---- */
+const colEl=document.getElementById('markColor'), hexEl=document.getElementById('markHex'), ovrBtn=document.getElementById('markOverride');
+function normHex(v){v=(v||'').trim();if(v[0]!=='#')v='#'+v;
+  if(/^#[0-9a-fA-F]{3}$/.test(v))v='#'+v[1]+v[1]+v[2]+v[2]+v[3]+v[3];
+  return /^#[0-9a-fA-F]{6}$/.test(v)?v.toLowerCase():null;}
+function syncColor(){colEl.value=S.markColor;hexEl.value=S.markColor.toUpperCase();
+  ovrBtn.classList.toggle('on',S.markOverride);ovrBtn.textContent='mark color: '+(S.markOverride?'custom':'theme');}
+function applyColor(hex,enable){S.markColor=hex;if(enable)S.markOverride=true;syncColor();render();}
+colEl.addEventListener('input',()=>applyColor(colEl.value,true));
+hexEl.addEventListener('input',()=>{const h=normHex(hexEl.value);if(h)applyColor(h,true);});
+ovrBtn.onclick=()=>{S.markOverride=!S.markOverride;syncColor();render();};
 document.querySelectorAll('#toggles button').forEach(b=>b.onclick=()=>{const t=b.dataset.t;S[t]=!S[t];
   if(t==='broken')b.textContent='broken line: '+(S.broken?'on':'off');
   if(t==='dark')b.textContent='theme: '+(S.dark?'dark':'light');
