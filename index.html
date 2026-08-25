@@ -10,6 +10,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet">
 <link id="gf" rel="stylesheet">
+<!-- opentype.js for converting webfont text to SVG vector paths -->
+<script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
 <style>
 :root{
   /* logo colors — must match the JS INK/PAPER used by PNG/SVG export */
@@ -227,7 +229,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
   </div>
 
   <div class="foot">
-    PNGs are high-resolution with a solid background; SVG is vector with live text (the chosen webfont is referenced inside). The config captures every setting here — re-import it any time to restore the exact design. Your last settings are also remembered automatically in this browser.</div>
+    PNGs are high-resolution with a solid background; SVG is vector with live paths. The config captures every setting here — re-import it any time to restore the exact design. Your last settings are also remembered automatically in this browser.</div>
 </div>
 
 <script>
@@ -523,16 +525,55 @@ async function renderCanvas(theme){
   }
   return cv;
 }
-function renderSVGfile(){
+
+/* ---- Fetch true TTF binary from Google Fonts & parse with opentype.js ---- */
+async function fetchParsedFont(f){
+  const cssUrl = gfURL([f]);
+  const cssResp = await fetch(cssUrl);
+  const cssText = await cssResp.text();
+  const fontUrlMatch = cssText.match(/url\((https:\/\/[^)]+\.(?:ttf|woff2|woff))\)/i);
+  if(!fontUrlMatch) throw new Error("Could not extract font URL");
+  const fontUrl = fontUrlMatch[1];
+  const buffer = await (await fetch(fontUrl)).arrayBuffer();
+  return opentype.parse(buffer);
+}
+
+async function renderSVGfile(){
   const fontPx=200, f=FONTS[S.fontIdx], fg=INK;
   const {W,H,ops}=computeLayout(fontPx);
+  
+  let otFont = null;
+  try {
+    otFont = await fetchParsedFont(f);
+  } catch(e) {
+    console.warn("Could not load vector opentype font, falling back to live text", e);
+  }
+
   let body='';
   for(const op of ops){
-    if(op.t==='text') body+=`<text x="${op.x.toFixed(1)}" y="${op.y.toFixed(1)}" font-family="'${f.fam}',sans-serif" font-weight="${f.w}" font-size="${fontPx}" dominant-baseline="central" fill="${op.c||fg}">${op.s}</text>`;
+    if(op.t==='text'){
+      if(otFont){
+        // Calculate baseline alignment offset from middle baseline (opentype uses baseline)
+        const path = otFont.getPath(op.s, op.x, op.y + (fontPx * 0.35), fontPx);
+        const pathSvg = path.toSVG(2);
+        // Replace black fill default with specified color
+        const coloredPath = pathSvg.replace('<path ', `<path fill="${op.c||fg}" `);
+        body += coloredPath;
+      } else {
+        body += `<text x="${op.x.toFixed(1)}" y="${op.y.toFixed(1)}" font-family="'${f.fam}',sans-serif" font-weight="${f.w}" font-size="${fontPx}" dominant-baseline="central" fill="${op.c||fg}">${op.s}</text>`;
+      }
+    }
     else if(op.t==='rect') body+=`<rect x="${op.x.toFixed(1)}" y="${op.y.toFixed(1)}" width="${op.w.toFixed(1)}" height="${op.h.toFixed(1)}" rx="${op.r.toFixed(1)}" fill="${op.c||fg}"/>`;
     else if(op.t==='mark') body+=`<g transform="translate(${op.x.toFixed(1)} ${op.y.toFixed(1)}) scale(${(op.w/76).toFixed(4)} ${(op.h/100).toFixed(4)})">${markShapes(markCol(fg))}</g>`;
   }
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.ceil(W)}" height="${Math.ceil(H)}" viewBox="0 0 ${Math.ceil(W)} ${Math.ceil(H)}"><defs><style>@import url('${gfURL([f])}');</style></defs>${body}</svg>`;
+
+  const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>\n';
+  if(!otFont){
+    const escapedFontURL = gfURL([f]).replace(/&/g, '&amp;');
+    return `${xmlHeader}<svg xmlns="http://www.w3.org/2000/svg" width="${Math.ceil(W)}" height="${Math.ceil(H)}" viewBox="0 0 ${Math.ceil(W)} ${Math.ceil(H)}"><defs><style>@import url('${escapedFontURL}');</style></defs>${body}</svg>`;
+  }
+  
+  return `${xmlHeader}<svg xmlns="http://www.w3.org/2000/svg" width="${Math.ceil(W)}" height="${Math.ceil(H)}" viewBox="0 0 ${Math.ceil(W)} ${Math.ceil(H)}">${body}</svg>`;
 }
 
 /* ---- download helpers ---- */
@@ -543,7 +584,12 @@ async function exportPNG(theme){
   const cv=await renderCanvas(theme);
   cv.toBlob(b=>{if(!b){status('PNG failed — try again');return;}dl(URL.createObjectURL(b),`de-link-${theme}.png`);status(`saved de-link-${theme}.png (${cv.width}×${cv.height})`);},'image/png');
 }
-function exportSVG(){const svg=renderSVGfile();dl(URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'})),'de-link.svg');status('saved de-link.svg');}
+async function exportSVG(){
+  status('vectorizing SVG paths…');
+  const svg=await renderSVGfile();
+  dl(URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'})),'de-link.svg');
+  status('saved de-link.svg');
+}
 
 /* ---- mark-only export (icon alone, independent of the chosen lockup) ---- */
 function mStatus(msg){document.getElementById('mStatus').textContent=msg;}
@@ -565,7 +611,8 @@ async function exportMarkPNG(theme){
 }
 function renderMarkSVGfile(){
   const fg=INK, markW=76, markH=100, pad=12, W=markW+2*pad, H=markH+2*pad;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><g transform="translate(${pad} ${pad})">${markShapes(markCol(fg))}</g></svg>`;
+  const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>\n';
+  return `${xmlHeader}<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><g transform="translate(${pad} ${pad})">${markShapes(markCol(fg))}</g></svg>`;
 }
 function exportMarkSVG(){const svg=renderMarkSVGfile();dl(URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'})),'de-link-mark.svg');mStatus('saved de-link-mark.svg');}
 function exportCfg(){const j=JSON.stringify({...S,font:FONTS[S.fontIdx].fam,_v:1},null,2);dl(URL.createObjectURL(new Blob([j],{type:'application/json'})),'de-link-config.json');status('saved de-link-config.json');}
