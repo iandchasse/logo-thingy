@@ -49,6 +49,7 @@ h1{font-family:"Baloo 2",sans-serif;font-weight:700;font-size:clamp(20px,4.4vw,2
 .panel{margin-top:16px;display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
 .panel>*{min-width:0}
 .block .rowlabel{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+.block .rowlabel .hint{text-transform:none;letter-spacing:.02em;opacity:.7}
 .seg{display:flex;flex-wrap:wrap;gap:8px}
 .seg button{font-family:inherit;font-size:12.5px;padding:0 14px;min-height:42px;border-radius:11px;
   border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;transition:.12s}
@@ -138,6 +139,19 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
         <button data-v="stacked">icon above</button>
         <button data-v="inword">in-word</button>
         <button data-v="only">mark only</button>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="rowlabel">separator <span class="hint">— icon-left &amp; icon-above</span></div>
+      <div class="seg" id="dash">
+        <button data-v="bar" class="on">bar</button>
+        <button data-v="split">split</button>
+        <button data-v="hyphen">hyphen</button>
+        <button data-v="en">en dash</button>
+        <button data-v="em">em dash</button>
+        <button data-v="dot">dot</button>
+        <button data-v="none">none</button>
       </div>
     </div>
 
@@ -231,7 +245,8 @@ const FONTS=[
   {fam:"Unbounded",         w:800, tag:"wide"},
 ];
 const GF_HREF=document.getElementById('gf').href;
-const DEFAULTS={layout:"left",size:115,gap:22,wt:55,rad:11,vert:0,broken:true,dark:true,markOverride:false,markColor:"#8be0c4",fontIdx:0};
+const DEFAULTS={layout:"left",size:115,gap:22,wt:55,rad:11,vert:0,dash:"bar",broken:true,dark:true,markOverride:false,markColor:"#8be0c4",fontIdx:0};
+const DASH_GLYPH={hyphen:"-",en:"–",em:"—",dot:"·"};
 const LS_KEY="delink-studio-v1";
 const S=Object.assign({},DEFAULTS);
 const measCtx=document.createElement('canvas').getContext('2d');
@@ -240,7 +255,7 @@ const measCtx=document.createElement('canvas').getContext('2d');
 function saveState(){try{localStorage.setItem(LS_KEY,JSON.stringify(S));}catch(e){}}
 function loadState(){
   try{const o=JSON.parse(localStorage.getItem(LS_KEY)||"null");if(!o)return;
-    ['layout','size','gap','wt','rad','vert','broken','dark','markOverride','markColor','fontIdx'].forEach(k=>{if(k in o)S[k]=o[k];});
+    ['layout','size','gap','wt','rad','vert','dash','broken','dark','markOverride','markColor','fontIdx'].forEach(k=>{if(k in o)S[k]=o[k];});
     if(!(S.fontIdx>=0&&S.fontIdx<FONTS.length))S.fontIdx=0;
   }catch(e){}
 }
@@ -286,11 +301,32 @@ function render(){
     const h=(S.size/100).toFixed(3)+'em';
     const ty=(-(S.vert/100)*(S.size/100)*0.5).toFixed(4);
     const mk=`<div class="mark" style="height:${h};transform:translateY(${ty}em)">${markSVG_dom('100%')}</div>`;
-    const word=`<span class="wm" style="${wmStyle}">de<span class="sep"><span class="hyphen"></span></span>link</span>`;
+    let sep;
+    if(S.dash==='bar') sep=`<span class="sep"><span class="hyphen"></span></span>`;
+    else if(S.dash==='split') sep=`<span class="sep" style="gap:.09em;margin:0 .06em"><span class="hyphen" style="width:.16em"></span><span class="hyphen" style="width:.16em"></span></span>`;
+    else if(S.dash==='none') sep='';
+    else sep=DASH_GLYPH[S.dash]||'-';
+    const word=`<span class="wm" style="${wmStyle}">de${sep}link</span>`;
     comp.innerHTML=mk+word;
     readings.style.display='none';
   }
   saveState();
+}
+
+/* ---- separator (dash) metrics + drawing for export ---- */
+function dashPad(fontPx){if(S.dash==='bar')return 0.10*fontPx;if(S.dash==='split')return 0.07*fontPx;if(S.dash==='none')return 0;return 0.02*fontPx;}
+function dashAdvance(fontPx,f){
+  if(S.dash==='none')return 0;
+  if(S.dash==='bar')return 0.40*fontPx;
+  if(S.dash==='split')return 0.16*fontPx*2+0.09*fontPx;
+  measCtx.font=`${f.w} ${fontPx}px "${f.fam}"`;return measCtx.measureText(DASH_GLYPH[S.dash]||'-').width;
+}
+function dashPush(ops,fontPx,f,x,y){
+  if(S.dash==='none')return;
+  const hH=0.14*fontPx;
+  if(S.dash==='bar'){ops.push({t:'rect',x,y:y-hH/2,w:0.40*fontPx,h:hH,r:hH/2});return;}
+  if(S.dash==='split'){const w=0.16*fontPx,g=0.09*fontPx;ops.push({t:'rect',x,y:y-hH/2,w,h:hH,r:hH/2});ops.push({t:'rect',x:x+w+g,y:y-hH/2,w,h:hH,r:hH/2});return;}
+  ops.push({t:'text',s:DASH_GLYPH[S.dash]||'-',x,y});
 }
 
 /* ---- shared layout math for export ---- */
@@ -298,7 +334,7 @@ function computeLayout(fontPx){
   const f=FONTS[S.fontIdx];
   measCtx.font=`${f.w} ${fontPx}px "${f.fam}"`;
   const wDe=measCtx.measureText('de').width, wLk=measCtx.measureText('link').width;
-  const hyW=0.40*fontPx, hyH=0.14*fontPx, hyPad=0.10*fontPx, pad=0.5*fontPx, lineH=fontPx*1.04;
+  const pad=0.5*fontPx, lineH=fontPx*1.04;
   let markH=(S.size/100)*fontPx, markW=markH*0.76, gap=(S.gap/100)*fontPx;
   let ops=[], W, H, cy;
   if(S.layout==='inword'){
@@ -310,25 +346,27 @@ function computeLayout(fontPx){
     ops.push({t:'mark',x,y:cy-markH/2+off,w:markW,h:markH}); x+=markW+ip;
     ops.push({t:'text',s:'link',x,y:cy});
   } else if(S.layout==='stacked'){
-    const wordW=wDe+hyPad+hyW+hyPad+wLk, contentW=Math.max(markW,wordW);
+    const dp=dashPad(fontPx), da=dashAdvance(fontPx,f);
+    const wordW=wDe+dp+da+dp+wLk, contentW=Math.max(markW,wordW);
     const off=-(S.vert/100)*markH*0.5, shift=Math.abs(off);
     W=contentW+2*pad; H=markH+gap+lineH+2*pad+2*shift; const midX=W/2;
     ops.push({t:'mark',x:midX-markW/2,y:pad+shift+off,w:markW,h:markH});
     const wy=pad+shift+markH+gap+lineH/2; let x=midX-wordW/2;
-    ops.push({t:'text',s:'de',x,y:wy}); x+=wDe+hyPad;
-    ops.push({t:'rect',x,y:wy-hyH/2,w:hyW,h:hyH,r:hyH/2}); x+=hyW+hyPad;
+    ops.push({t:'text',s:'de',x,y:wy}); x+=wDe+dp;
+    dashPush(ops,fontPx,f,x,wy); x+=da+dp;
     ops.push({t:'text',s:'link',x,y:wy});
   } else if(S.layout==='only'){
     const mh=(S.size/100)*1.7*fontPx, mw=mh*0.76;
     W=mw+2*pad; H=mh+2*pad;
     ops.push({t:'mark',x:pad,y:pad,w:mw,h:mh});
   } else { // left
-    const wordW=wDe+hyPad+hyW+hyPad+wLk, contentW=markW+gap+wordW;
+    const dp=dashPad(fontPx), da=dashAdvance(fontPx,f);
+    const wordW=wDe+dp+da+dp+wLk, contentW=markW+gap+wordW;
     const off=-(S.vert/100)*markH*0.5;
     W=contentW+2*pad; H=Math.max(markH,lineH)+2*pad+2*Math.abs(off); cy=H/2; let x=pad;
     ops.push({t:'mark',x,y:cy-markH/2+off,w:markW,h:markH}); x+=markW+gap;
-    ops.push({t:'text',s:'de',x,y:cy}); x+=wDe+hyPad;
-    ops.push({t:'rect',x,y:cy-hyH/2,w:hyW,h:hyH,r:hyH/2}); x+=hyW+hyPad;
+    ops.push({t:'text',s:'de',x,y:cy}); x+=wDe+dp;
+    dashPush(ops,fontPx,f,x,cy); x+=da+dp;
     ops.push({t:'text',s:'link',x,y:cy});
   }
   return {W,H,ops};
@@ -404,7 +442,7 @@ function importCfg(file){
   const r=new FileReader();
   r.onload=()=>{try{
     const o=JSON.parse(r.result);
-    ['layout','size','gap','wt','rad','vert','broken','dark','markOverride','markColor'].forEach(k=>{if(k in o)S[k]=o[k];});
+    ['layout','size','gap','wt','rad','vert','dash','broken','dark','markOverride','markColor'].forEach(k=>{if(k in o)S[k]=o[k];});
     if('fontIdx' in o) S.fontIdx=o.fontIdx;
     if('font' in o){const i=FONTS.findIndex(f=>f.fam===o.font);if(i>=0)S.fontIdx=i;}
     if(!(S.fontIdx>=0&&S.fontIdx<FONTS.length))S.fontIdx=0;
@@ -428,6 +466,7 @@ function buildFontRow(){
 const SLIDERS=[['size','vSize',v=>(v/100).toFixed(2)+'×'],['gap','vGap',v=>(v/100).toFixed(2)+'em'],['wt','vWt',v=>(v/10).toFixed(1)],['rad','vRad',v=>String(v)],['vert','vVert',v=>v>0?'+'+v:String(v)]];
 function syncControls(){
   document.querySelectorAll('#layout button').forEach(x=>x.classList.toggle('on',x.dataset.v===S.layout));
+  document.querySelectorAll('#dash button').forEach(x=>x.classList.toggle('on',x.dataset.v===S.dash));
   SLIDERS.forEach(([id,out,fmt])=>{const el=document.getElementById(id);el.value=S[id];document.getElementById(out).textContent=fmt(S[id]);});
   const tg=document.querySelectorAll('#toggles button');
   tg.forEach(b=>{const t=b.dataset.t;b.classList.toggle('on',!!S[t]);
@@ -439,6 +478,7 @@ function syncControls(){
 }
 
 document.querySelectorAll('#layout button').forEach(b=>b.onclick=()=>{S.layout=b.dataset.v;document.querySelectorAll('#layout button').forEach(x=>x.classList.toggle('on',x===b));render();});
+document.querySelectorAll('#dash button').forEach(b=>b.onclick=()=>{S.dash=b.dataset.v;document.querySelectorAll('#dash button').forEach(x=>x.classList.toggle('on',x===b));render();});
 SLIDERS.forEach(([id,out,fmt])=>{const el=document.getElementById(id),o=document.getElementById(out);const u=()=>{let v=+el.value;if(id==='vert'&&Math.abs(v)<=5){v=0;el.value=0;}S[id]=v;o.textContent=fmt(v);render();};el.addEventListener('input',u);});
 document.getElementById('vertReset').onclick=()=>{S.vert=0;const el=document.getElementById('vert');el.value=0;document.getElementById('vVert').textContent='0';render();};
 
