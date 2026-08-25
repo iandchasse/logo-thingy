@@ -34,7 +34,8 @@ h1{font-family:"Baloo 2",sans-serif;font-weight:700;font-size:clamp(20px,4.4vw,2
   min-height:clamp(210px,40vh,300px);display:flex;align-items:center;justify-content:center;
   padding:clamp(22px,6vw,46px);transition:background .25s,color .25s,border-color .25s;position:relative;overflow:hidden}
 .stage.dark{background:var(--ink);color:var(--paper);border-color:#000}
-.comp{display:flex;align-items:center;justify-content:center;gap:var(--gap);color:inherit;max-width:100%}
+.comp{display:flex;align-items:center;justify-content:center;gap:var(--gap);color:inherit;max-width:100%;
+  font-size:clamp(30px,7.2vw,48px)}
 .comp.stacked{flex-direction:column}
 .mark{color:inherit;flex:0 0 auto}
 .mark svg{display:block;height:100%;width:auto}
@@ -330,10 +331,10 @@ function render(){
     const ty=(-(S.vert/100)*(S.size/100)*0.5).toFixed(4);
     const mk=`<div class="mark" style="height:${h};transform:translateY(${ty}em)">${markSVG_dom('100%')}</div>`;
     let sep;
-    if(S.dash==='bar') sep=`<span class="sep"><span class="hyphen"></span></span>`;
-    else if(S.dash==='split') sep=`<span class="sep" style="gap:.09em;margin:0 .06em"><span class="hyphen" style="width:.16em"></span><span class="hyphen" style="width:.16em"></span></span>`;
+    if(S.dash==='bar') sep=`<span class="sep" style="margin:0 .1em"><span class="hyphen"></span></span>`;
+    else if(S.dash==='split') sep=`<span class="sep" style="gap:.09em;margin:0 .07em"><span class="hyphen" style="width:.16em"></span><span class="hyphen" style="width:.16em"></span></span>`;
     else if(S.dash==='none') sep='';
-    else sep=DASH_GLYPH[S.dash]||'-';
+    else sep=`<span style="margin:0 .02em">${DASH_GLYPH[S.dash]||'-'}</span>`;
     const word=`<span class="wm" style="${wmStyle}">${deHTML()}${sep}${linkHTML()}</span>`;
     comp.innerHTML=mk+word;
     readings.style.display='none';
@@ -347,7 +348,7 @@ function dashAdvance(fontPx,f){
   if(S.dash==='none')return 0;
   if(S.dash==='bar')return 0.40*fontPx;
   if(S.dash==='split')return 0.16*fontPx*2+0.09*fontPx;
-  measCtx.font=`${f.w} ${fontPx}px "${f.fam}"`;return measCtx.measureText(DASH_GLYPH[S.dash]||'-').width;
+  measCtx.font=`${f.w} ${fontPx}px "${f.fam}", sans-serif`;return measCtx.measureText(DASH_GLYPH[S.dash]||'-').width;
 }
 function dashPush(ops,fontPx,f,x,y){
   if(S.dash==='none')return;
@@ -359,7 +360,7 @@ function dashPush(ops,fontPx,f,x,y){
 
 /* ---- push a word as per-letter ops (positioned by cumulative kerned width) ---- */
 function pushStr(ops,str,idxs,penX,y,fontPx,f){
-  measCtx.font=`${f.w} ${fontPx}px "${f.fam}"`;
+  measCtx.font=`${f.w} ${fontPx}px "${f.fam}", sans-serif`;
   for(let k=0;k<str.length;k++){
     const x=penX+measCtx.measureText(str.slice(0,k)).width;
     ops.push({t:'text',s:str[k],x,y,c:letterC(idxs[k])});
@@ -370,7 +371,7 @@ function pushStr(ops,str,idxs,penX,y,fontPx,f){
 /* ---- shared layout math for export ---- */
 function computeLayout(fontPx){
   const f=FONTS[S.fontIdx];
-  measCtx.font=`${f.w} ${fontPx}px "${f.fam}"`;
+  measCtx.font=`${f.w} ${fontPx}px "${f.fam}", sans-serif`;
   const wDe=measCtx.measureText('de').width, wLk=measCtx.measureText('link').width;
   const pad=0.5*fontPx, lineH=fontPx*1.04;
   let markH=(S.size/100)*fontPx, markW=markH*0.76, gap=(S.gap/100)*fontPx;
@@ -424,7 +425,7 @@ async function renderCanvas(theme){
   const markImg=await loadImg(markStandalone(markCol(fg)));
   ctx.fillStyle=fg; ctx.textBaseline='middle'; ctx.textAlign='left';
   for(const op of ops){
-    if(op.t==='text'){ctx.font=`${f.w} ${fontPx}px "${f.fam}"`;ctx.fillStyle=op.c||fg;ctx.fillText(op.s,op.x,op.y);}
+    if(op.t==='text'){ctx.font=`${f.w} ${fontPx}px "${f.fam}", sans-serif`;ctx.fillStyle=op.c||fg;ctx.fillText(op.s,op.x,op.y);}
     else if(op.t==='rect'){ctx.fillStyle=fg;rr(ctx,op.x,op.y,op.w,op.h,op.r);ctx.fill();}
     else if(op.t==='mark'){ctx.drawImage(markImg,op.x,op.y,op.w,op.h);}
   }
