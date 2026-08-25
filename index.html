@@ -197,7 +197,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
     </div>
 
     <div class="block">
-      <div class="rowlabel">letter colors <span class="hint">— tap a letter to toggle, swatch to set</span></div>
+      <div class="rowlabel">letter + dash colors <span class="hint">— tap to toggle, swatch to set</span></div>
       <div class="letters" id="letters"></div>
     </div>
 
@@ -273,8 +273,11 @@ function freshLetters(){return LETTERS.map(()=>({on:false,color:"#8be0c4"}));}
 function sanitizeLetters(arr){return freshLetters().map((d,i)=>{const e=(arr&&arr[i])||{};const c=/^#[0-9a-fA-F]{6}$/.test(e.color)?e.color.toLowerCase():d.color;return {on:!!e.on,color:c};});}
 const S=Object.assign({},DEFAULTS);
 S.letters=freshLetters();
+S.dashColor={on:false,color:"#8be0c4"};
 const measCtx=document.createElement('canvas').getContext('2d');
 function letterC(i){const L=S.letters[i];return (L&&L.on)?L.color:undefined;}
+function dashCol(){return S.dashColor.on?S.dashColor.color:undefined;}
+function sanColor(o,def){o=o||{};return {on:!!o.on,color:/^#[0-9a-fA-F]{6}$/.test(o.color)?o.color.toLowerCase():def};}
 
 /* ---- persistence ---- */
 function saveState(){try{localStorage.setItem(LS_KEY,JSON.stringify(S));}catch(e){}}
@@ -282,6 +285,7 @@ function loadState(){
   try{const o=JSON.parse(localStorage.getItem(LS_KEY)||"null");if(!o)return;
     ['layout','size','gap','wt','rad','vert','dash','broken','dark','markOverride','markColor','fontIdx'].forEach(k=>{if(k in o)S[k]=o[k];});
     if('letters' in o)S.letters=sanitizeLetters(o.letters);
+    if('dashColor' in o)S.dashColor=sanColor(o.dashColor,"#8be0c4");
     if(!(S.fontIdx>=0&&S.fontIdx<FONTS.length))S.fontIdx=0;
   }catch(e){}
 }
@@ -330,11 +334,11 @@ function render(){
     const h=(S.size/100).toFixed(3)+'em';
     const ty=(-(S.vert/100)*(S.size/100)*0.5).toFixed(4);
     const mk=`<div class="mark" style="height:${h};transform:translateY(${ty}em)">${markSVG_dom('100%')}</div>`;
-    let sep;
-    if(S.dash==='bar') sep=`<span class="sep" style="margin:0 .1em"><span class="hyphen"></span></span>`;
-    else if(S.dash==='split') sep=`<span class="sep" style="gap:.09em;margin:0 .07em"><span class="hyphen" style="width:.16em"></span><span class="hyphen" style="width:.16em"></span></span>`;
+    let sep; const dc=dashCol(), dcs=dc?`;color:${dc}`:'';
+    if(S.dash==='bar') sep=`<span class="sep" style="margin:0 .1em${dcs}"><span class="hyphen"></span></span>`;
+    else if(S.dash==='split') sep=`<span class="sep" style="gap:.09em;margin:0 .07em${dcs}"><span class="hyphen" style="width:.16em"></span><span class="hyphen" style="width:.16em"></span></span>`;
     else if(S.dash==='none') sep='';
-    else sep=`<span style="margin:0 .02em">${DASH_GLYPH[S.dash]||'-'}</span>`;
+    else sep=`<span style="margin:0 .02em${dcs}">${DASH_GLYPH[S.dash]||'-'}</span>`;
     const word=`<span class="wm" style="${wmStyle}">${deHTML()}${sep}${linkHTML()}</span>`;
     comp.innerHTML=mk+word;
     readings.style.display='none';
@@ -352,10 +356,10 @@ function dashAdvance(fontPx,f){
 }
 function dashPush(ops,fontPx,f,x,y){
   if(S.dash==='none')return;
-  const hH=0.14*fontPx;
-  if(S.dash==='bar'){ops.push({t:'rect',x,y:y-hH/2,w:0.40*fontPx,h:hH,r:hH/2});return;}
-  if(S.dash==='split'){const w=0.16*fontPx,g=0.09*fontPx;ops.push({t:'rect',x,y:y-hH/2,w,h:hH,r:hH/2});ops.push({t:'rect',x:x+w+g,y:y-hH/2,w,h:hH,r:hH/2});return;}
-  ops.push({t:'text',s:DASH_GLYPH[S.dash]||'-',x,y});
+  const hH=0.14*fontPx, c=dashCol();
+  if(S.dash==='bar'){ops.push({t:'rect',x,y:y-hH/2,w:0.40*fontPx,h:hH,r:hH/2,c});return;}
+  if(S.dash==='split'){const w=0.16*fontPx,g=0.09*fontPx;ops.push({t:'rect',x,y:y-hH/2,w,h:hH,r:hH/2,c});ops.push({t:'rect',x:x+w+g,y:y-hH/2,w,h:hH,r:hH/2,c});return;}
+  ops.push({t:'text',s:DASH_GLYPH[S.dash]||'-',x,y,c});
 }
 
 /* ---- push a word as per-letter ops (positioned by cumulative kerned width) ---- */
@@ -426,7 +430,7 @@ async function renderCanvas(theme){
   ctx.fillStyle=fg; ctx.textBaseline='middle'; ctx.textAlign='left';
   for(const op of ops){
     if(op.t==='text'){ctx.font=`${f.w} ${fontPx}px "${f.fam}", sans-serif`;ctx.fillStyle=op.c||fg;ctx.fillText(op.s,op.x,op.y);}
-    else if(op.t==='rect'){ctx.fillStyle=fg;rr(ctx,op.x,op.y,op.w,op.h,op.r);ctx.fill();}
+    else if(op.t==='rect'){ctx.fillStyle=op.c||fg;rr(ctx,op.x,op.y,op.w,op.h,op.r);ctx.fill();}
     else if(op.t==='mark'){ctx.drawImage(markImg,op.x,op.y,op.w,op.h);}
   }
   return cv;
@@ -437,7 +441,7 @@ function renderSVGfile(){
   let body='';
   for(const op of ops){
     if(op.t==='text') body+=`<text x="${op.x.toFixed(1)}" y="${op.y.toFixed(1)}" font-family="'${f.fam}',sans-serif" font-weight="${f.w}" font-size="${fontPx}" dominant-baseline="central" fill="${op.c||fg}">${op.s}</text>`;
-    else if(op.t==='rect') body+=`<rect x="${op.x.toFixed(1)}" y="${op.y.toFixed(1)}" width="${op.w.toFixed(1)}" height="${op.h.toFixed(1)}" rx="${op.r.toFixed(1)}" fill="${fg}"/>`;
+    else if(op.t==='rect') body+=`<rect x="${op.x.toFixed(1)}" y="${op.y.toFixed(1)}" width="${op.w.toFixed(1)}" height="${op.h.toFixed(1)}" rx="${op.r.toFixed(1)}" fill="${op.c||fg}"/>`;
     else if(op.t==='mark') body+=`<g transform="translate(${op.x.toFixed(1)} ${op.y.toFixed(1)}) scale(${(op.w/76).toFixed(4)} ${(op.h/100).toFixed(4)})">${markShapes(markCol(fg))}</g>`;
   }
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.ceil(W)}" height="${Math.ceil(H)}" viewBox="0 0 ${Math.ceil(W)} ${Math.ceil(H)}"><defs><style>@import url('${GF_HREF}');</style></defs>${body}</svg>`;
@@ -483,6 +487,7 @@ function importCfg(file){
     const o=JSON.parse(r.result);
     ['layout','size','gap','wt','rad','vert','dash','broken','dark','markOverride','markColor'].forEach(k=>{if(k in o)S[k]=o[k];});
     if('letters' in o)S.letters=sanitizeLetters(o.letters);
+    if('dashColor' in o)S.dashColor=sanColor(o.dashColor,"#8be0c4");
     if('fontIdx' in o) S.fontIdx=o.fontIdx;
     if('font' in o){const i=FONTS.findIndex(f=>f.fam===o.font);if(i>=0)S.fontIdx=i;}
     if(!(S.fontIdx>=0&&S.fontIdx<FONTS.length))S.fontIdx=0;
@@ -490,7 +495,7 @@ function importCfg(file){
   }catch(e){status('couldn’t read that config file');}};
   r.readAsText(file);
 }
-function resetAll(){Object.assign(S,DEFAULTS);S.letters=freshLetters();syncControls();render();status('reset to defaults');}
+function resetAll(){Object.assign(S,DEFAULTS);S.letters=freshLetters();S.dashColor={on:false,color:"#8be0c4"};syncControls();render();status('reset to defaults');}
 
 /* ---- controls ---- */
 function buildFontRow(){
@@ -503,11 +508,15 @@ function buildFontRow(){
   });
   const on=box.querySelector('button.on'); if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest',inline:'nearest'});
 }
+function slotOf(key){return key==='dash'?S.dashColor:S.letters[+key];}
 function buildLetterRow(){
   const box=document.getElementById('letters');
-  box.innerHTML=LETTERS.map((ch,i)=>{const L=S.letters[i];return `<div class="lcell${L.on?' on':''}" data-i="${i}"><button type="button" class="ltog" data-i="${i}" style="${L.on?`color:${L.color}`:''}">${ch}</button><input type="color" class="lcol" data-i="${i}" value="${L.color}" aria-label="${ch} color"></div>`;}).join('');
-  box.querySelectorAll('.ltog').forEach(btn=>btn.onclick=()=>{const i=+btn.dataset.i,L=S.letters[i];L.on=!L.on;const cell=btn.closest('.lcell');cell.classList.toggle('on',L.on);btn.style.color=L.on?L.color:'';render();});
-  box.querySelectorAll('.lcol').forEach(inp=>inp.addEventListener('input',()=>{const i=+inp.dataset.i,L=S.letters[i];L.color=inp.value;L.on=true;const cell=inp.closest('.lcell');cell.classList.add('on');cell.querySelector('.ltog').style.color=inp.value;render();}));
+  const cell=(label,key,L)=>`<div class="lcell${L.on?' on':''}" data-i="${key}"><button type="button" class="ltog" data-i="${key}" style="${L.on?`color:${L.color}`:''}">${label}</button><input type="color" class="lcol" data-i="${key}" value="${L.color}" aria-label="${label} color"></div>`;
+  let html=LETTERS.map((ch,i)=>cell(ch,String(i),S.letters[i])).join('');
+  if(S.dash!=='none') html+=cell('–','dash',S.dashColor);
+  box.innerHTML=html;
+  box.querySelectorAll('.ltog').forEach(btn=>btn.onclick=()=>{const L=slotOf(btn.dataset.i);L.on=!L.on;const c=btn.closest('.lcell');c.classList.toggle('on',L.on);btn.style.color=L.on?L.color:'';render();});
+  box.querySelectorAll('.lcol').forEach(inp=>inp.addEventListener('input',()=>{const L=slotOf(inp.dataset.i);L.color=inp.value;L.on=true;const c=inp.closest('.lcell');c.classList.add('on');c.querySelector('.ltog').style.color=inp.value;render();}));
 }
 const SLIDERS=[['size','vSize',v=>(v/100).toFixed(2)+'×'],['gap','vGap',v=>(v/100).toFixed(2)+'em'],['wt','vWt',v=>(v/10).toFixed(1)],['rad','vRad',v=>String(v)],['vert','vVert',v=>v>0?'+'+v:String(v)]];
 function syncControls(){
@@ -525,7 +534,7 @@ function syncControls(){
 }
 
 document.querySelectorAll('#layout button').forEach(b=>b.onclick=()=>{S.layout=b.dataset.v;document.querySelectorAll('#layout button').forEach(x=>x.classList.toggle('on',x===b));render();});
-document.querySelectorAll('#dash button').forEach(b=>b.onclick=()=>{S.dash=b.dataset.v;document.querySelectorAll('#dash button').forEach(x=>x.classList.toggle('on',x===b));render();});
+document.querySelectorAll('#dash button').forEach(b=>b.onclick=()=>{S.dash=b.dataset.v;document.querySelectorAll('#dash button').forEach(x=>x.classList.toggle('on',x===b));buildLetterRow();render();});
 SLIDERS.forEach(([id,out,fmt])=>{const el=document.getElementById(id),o=document.getElementById(out);const u=()=>{let v=+el.value;if(id==='vert'&&Math.abs(v)<=5){v=0;el.value=0;}S[id]=v;o.textContent=fmt(v);render();};el.addEventListener('input',u);});
 document.getElementById('vertReset').onclick=()=>{S.vert=0;const el=document.getElementById('vert');el.value=0;document.getElementById('vVert').textContent='0';render();};
 
