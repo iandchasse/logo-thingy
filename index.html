@@ -71,6 +71,10 @@ h1{font-family:"Baloo 2",sans-serif;font-weight:700;font-size:clamp(20px,4.4vw,2
 .ctl{display:flex;flex-direction:column;gap:9px;min-width:0}
 .ctl .lab{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;color:var(--muted)}
 .ctl .lab b{color:var(--fg);font-weight:400;font-variant-numeric:tabular-nums}
+.ctl .lab .mini{font-family:inherit;font-size:10px;letter-spacing:.04em;color:var(--muted);background:transparent;
+  border:1px solid var(--line);border-radius:7px;padding:2px 8px;margin-left:8px;cursor:pointer;vertical-align:middle;transition:.12s}
+.ctl .lab .mini:hover{border-color:var(--muted);color:var(--fg)}
+.ctl .lab .mini:active{transform:translateY(1px)}
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;min-width:0;height:6px;border-radius:99px;
   background:var(--track);outline-offset:6px;cursor:pointer;margin:8px 0}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;
@@ -131,6 +135,8 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
         <input type="range" id="wt" min="30" max="80" value="55" aria-label="line weight"></div>
       <div class="ctl"><div class="lab"><span>roundness</span><b id="vRad"></b></div>
         <input type="range" id="rad" min="2" max="22" value="11" aria-label="roundness"></div>
+      <div class="ctl"><div class="lab"><span>vertical<button type="button" class="mini" id="vertReset">center</button></span><b id="vVert"></b></div>
+        <input type="range" id="vert" min="-100" max="100" value="0" aria-label="vertical position"></div>
     </div>
 
     <div class="seg" id="toggles">
@@ -191,7 +197,7 @@ const FONTS=[
   {fam:"Archivo",           w:800, tag:"grotesk"},
 ];
 const GF_HREF=document.getElementById('gf').href;
-const DEFAULTS={layout:"left",size:115,gap:22,wt:55,rad:11,broken:true,dark:true,fontIdx:0};
+const DEFAULTS={layout:"left",size:115,gap:22,wt:55,rad:11,vert:0,broken:true,dark:true,fontIdx:0};
 const LS_KEY="delink-studio-v1";
 const S=Object.assign({},DEFAULTS);
 const measCtx=document.createElement('canvas').getContext('2d');
@@ -200,7 +206,7 @@ const measCtx=document.createElement('canvas').getContext('2d');
 function saveState(){try{localStorage.setItem(LS_KEY,JSON.stringify(S));}catch(e){}}
 function loadState(){
   try{const o=JSON.parse(localStorage.getItem(LS_KEY)||"null");if(!o)return;
-    ['layout','size','gap','wt','rad','broken','dark','fontIdx'].forEach(k=>{if(k in o)S[k]=o[k];});
+    ['layout','size','gap','wt','rad','vert','broken','dark','fontIdx'].forEach(k=>{if(k in o)S[k]=o[k];});
     if(!(S.fontIdx>=0&&S.fontIdx<FONTS.length))S.fontIdx=0;
   }catch(e){}
 }
@@ -238,11 +244,13 @@ function render(){
     readings.style.display='block';
   } else if(S.layout==='inword'){
     const h=((S.size/100)*0.8).toFixed(3)+'em';
-    comp.innerHTML=`<span class="wm" style="${wmStyle}">de<span class="sep" style="width:auto;margin:0 ${(S.gap/100).toFixed(3)}em"><span class="mark" style="height:${h};display:inline-flex">${markSVG_dom('100%')}</span></span>link</span>`;
+    const ty=(-(S.vert/100)*(S.size/100)*0.8*0.5).toFixed(4);
+    comp.innerHTML=`<span class="wm" style="${wmStyle}">de<span class="sep" style="width:auto;margin:0 ${(S.gap/100).toFixed(3)}em"><span class="mark" style="height:${h};display:inline-flex;transform:translateY(${ty}em)">${markSVG_dom('100%')}</span></span>link</span>`;
     readings.style.display='none';
   } else {
     const h=(S.size/100).toFixed(3)+'em';
-    const mk=`<div class="mark" style="height:${h}">${markSVG_dom('100%')}</div>`;
+    const ty=(-(S.vert/100)*(S.size/100)*0.5).toFixed(4);
+    const mk=`<div class="mark" style="height:${h};transform:translateY(${ty}em)">${markSVG_dom('100%')}</div>`;
     const word=`<span class="wm" style="${wmStyle}">de<span class="sep"><span class="hyphen"></span></span>link</span>`;
     comp.innerHTML=mk+word;
     readings.style.display='none';
@@ -261,15 +269,17 @@ function computeLayout(fontPx){
   if(S.layout==='inword'){
     markH=(S.size/100)*0.8*fontPx; markW=markH*0.76;
     const ip=(S.gap/100)*fontPx, contentW=wDe+ip+markW+ip+wLk;
-    W=contentW+2*pad; H=Math.max(lineH,markH)+2*pad; cy=H/2; let x=pad;
+    const off=-(S.vert/100)*markH*0.5;
+    W=contentW+2*pad; H=Math.max(lineH,markH)+2*pad+2*Math.abs(off); cy=H/2; let x=pad;
     ops.push({t:'text',s:'de',x,y:cy}); x+=wDe+ip;
-    ops.push({t:'mark',x,y:cy-markH/2,w:markW,h:markH}); x+=markW+ip;
+    ops.push({t:'mark',x,y:cy-markH/2+off,w:markW,h:markH}); x+=markW+ip;
     ops.push({t:'text',s:'link',x,y:cy});
   } else if(S.layout==='stacked'){
     const wordW=wDe+hyPad+hyW+hyPad+wLk, contentW=Math.max(markW,wordW);
-    W=contentW+2*pad; H=markH+gap+lineH+2*pad; const midX=W/2;
-    ops.push({t:'mark',x:midX-markW/2,y:pad,w:markW,h:markH});
-    const wy=pad+markH+gap+lineH/2; let x=midX-wordW/2;
+    const off=-(S.vert/100)*markH*0.5, shift=Math.abs(off);
+    W=contentW+2*pad; H=markH+gap+lineH+2*pad+2*shift; const midX=W/2;
+    ops.push({t:'mark',x:midX-markW/2,y:pad+shift+off,w:markW,h:markH});
+    const wy=pad+shift+markH+gap+lineH/2; let x=midX-wordW/2;
     ops.push({t:'text',s:'de',x,y:wy}); x+=wDe+hyPad;
     ops.push({t:'rect',x,y:wy-hyH/2,w:hyW,h:hyH,r:hyH/2}); x+=hyW+hyPad;
     ops.push({t:'text',s:'link',x,y:wy});
@@ -279,8 +289,9 @@ function computeLayout(fontPx){
     ops.push({t:'mark',x:pad,y:pad,w:mw,h:mh});
   } else { // left
     const wordW=wDe+hyPad+hyW+hyPad+wLk, contentW=markW+gap+wordW;
-    W=contentW+2*pad; H=Math.max(markH,lineH)+2*pad; cy=H/2; let x=pad;
-    ops.push({t:'mark',x,y:cy-markH/2,w:markW,h:markH}); x+=markW+gap;
+    const off=-(S.vert/100)*markH*0.5;
+    W=contentW+2*pad; H=Math.max(markH,lineH)+2*pad+2*Math.abs(off); cy=H/2; let x=pad;
+    ops.push({t:'mark',x,y:cy-markH/2+off,w:markW,h:markH}); x+=markW+gap;
     ops.push({t:'text',s:'de',x,y:cy}); x+=wDe+hyPad;
     ops.push({t:'rect',x,y:cy-hyH/2,w:hyW,h:hyH,r:hyH/2}); x+=hyW+hyPad;
     ops.push({t:'text',s:'link',x,y:cy});
@@ -358,7 +369,7 @@ function importCfg(file){
   const r=new FileReader();
   r.onload=()=>{try{
     const o=JSON.parse(r.result);
-    ['layout','size','gap','wt','rad','broken','dark'].forEach(k=>{if(k in o)S[k]=o[k];});
+    ['layout','size','gap','wt','rad','vert','broken','dark'].forEach(k=>{if(k in o)S[k]=o[k];});
     if('fontIdx' in o) S.fontIdx=o.fontIdx;
     if('font' in o){const i=FONTS.findIndex(f=>f.fam===o.font);if(i>=0)S.fontIdx=i;}
     if(!(S.fontIdx>=0&&S.fontIdx<FONTS.length))S.fontIdx=0;
@@ -379,7 +390,7 @@ function buildFontRow(){
   });
   const on=box.querySelector('button.on'); if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest',inline:'nearest'});
 }
-const SLIDERS=[['size','vSize',v=>(v/100).toFixed(2)+'×'],['gap','vGap',v=>(v/100).toFixed(2)+'em'],['wt','vWt',v=>(v/10).toFixed(1)],['rad','vRad',v=>String(v)]];
+const SLIDERS=[['size','vSize',v=>(v/100).toFixed(2)+'×'],['gap','vGap',v=>(v/100).toFixed(2)+'em'],['wt','vWt',v=>(v/10).toFixed(1)],['rad','vRad',v=>String(v)],['vert','vVert',v=>v>0?'+'+v:String(v)]];
 function syncControls(){
   document.querySelectorAll('#layout button').forEach(x=>x.classList.toggle('on',x.dataset.v===S.layout));
   SLIDERS.forEach(([id,out,fmt])=>{const el=document.getElementById(id);el.value=S[id];document.getElementById(out).textContent=fmt(S[id]);});
@@ -392,7 +403,8 @@ function syncControls(){
 }
 
 document.querySelectorAll('#layout button').forEach(b=>b.onclick=()=>{S.layout=b.dataset.v;document.querySelectorAll('#layout button').forEach(x=>x.classList.toggle('on',x===b));render();});
-SLIDERS.forEach(([id,out,fmt])=>{const el=document.getElementById(id),o=document.getElementById(out);const u=()=>{S[id]=+el.value;o.textContent=fmt(+el.value);render();};el.addEventListener('input',u);});
+SLIDERS.forEach(([id,out,fmt])=>{const el=document.getElementById(id),o=document.getElementById(out);const u=()=>{let v=+el.value;if(id==='vert'&&Math.abs(v)<=5){v=0;el.value=0;}S[id]=v;o.textContent=fmt(v);render();};el.addEventListener('input',u);});
+document.getElementById('vertReset').onclick=()=>{S.vert=0;const el=document.getElementById('vert');el.value=0;document.getElementById('vVert').textContent='0';render();};
 document.querySelectorAll('#toggles button').forEach(b=>b.onclick=()=>{const t=b.dataset.t;S[t]=!S[t];
   if(t==='broken')b.textContent='broken line: '+(S.broken?'on':'off');
   if(t==='dark')b.textContent='theme: '+(S.dark?'dark':'light');
