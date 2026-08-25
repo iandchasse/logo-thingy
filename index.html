@@ -103,7 +103,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 
   <div class="stage" id="stage">
     <div class="comp" id="comp"></div>
-    <div class="readings" id="readings">page · link · device · face</div>
+    <div class="readings" id="readings">page · link · device · smile</div>
   </div>
 
   <div class="panel">
@@ -136,7 +136,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
     <div class="seg" id="toggles">
       <button data-t="broken" class="on">broken line: on</button>
       <button data-t="dark">theme: light</button>
-      <button data-t="face">show face: off</button>
+      <button data-t="smile">smile: off</button>
     </div>
 
     <div class="block">
@@ -192,7 +192,7 @@ const FONTS=[
   {fam:"Archivo",           w:800, tag:"grotesk"},
 ];
 const GF_HREF=document.getElementById('gf').href;
-const DEFAULTS={layout:"left",size:115,gap:22,wt:55,rad:11,broken:true,dark:true,face:false,fontIdx:0};
+const DEFAULTS={layout:"left",size:115,gap:22,wt:55,rad:11,broken:true,dark:true,smile:false,fontIdx:0};
 const LS_KEY="delink-studio-v1";
 const S=Object.assign({},DEFAULTS);
 const measCtx=document.createElement('canvas').getContext('2d');
@@ -201,27 +201,29 @@ const measCtx=document.createElement('canvas').getContext('2d');
 function saveState(){try{localStorage.setItem(LS_KEY,JSON.stringify(S));}catch(e){}}
 function loadState(){
   try{const o=JSON.parse(localStorage.getItem(LS_KEY)||"null");if(!o)return;
-    ['layout','size','gap','wt','rad','broken','dark','face','fontIdx'].forEach(k=>{if(k in o)S[k]=o[k];});
+    ['layout','size','gap','wt','rad','broken','dark','smile','fontIdx'].forEach(k=>{if(k in o)S[k]=o[k];});
     if(!(S.fontIdx>=0&&S.fontIdx<FONTS.length))S.fontIdx=0;
   }catch(e){}
 }
 
 /* ---- mark geometry (viewBox 76 x 100) ---- */
-function markShapes(color, forFace){
+function markShapes(color){
   const w=S.wt/10, t=Math.max(3.4,w*0.92), lr=(t/2).toFixed(1), rx=S.rad;
   const mid = S.broken
     ? `<rect x="18" y="${(50-t/2).toFixed(1)}" width="15" height="${t.toFixed(1)}" rx="${lr}"/>`+
       `<rect x="43" y="${(50-t/2).toFixed(1)}" width="15" height="${t.toFixed(1)}" rx="${lr}"/>`
     : `<rect x="18" y="${(50-t/2).toFixed(1)}" width="40" height="${t.toFixed(1)}" rx="${lr}"/>`;
-  const guide = forFace ? `<g fill="none" stroke="${color}" stroke-width="0.8" opacity="0.3" stroke-dasharray="2 2"><path d="M6 30h64"/><path d="M6 70h64"/></g>` : '';
+  const bottom = S.smile
+    ? `<path d="M18 67 Q38 79 58 67" fill="none" stroke="${color}" stroke-width="${t.toFixed(1)}" stroke-linecap="round" stroke-linejoin="round"/>`
+    : `<rect x="18" y="${(70-t/2).toFixed(1)}" width="40" height="${t.toFixed(1)}" rx="${lr}" fill="${color}"/>`;
   return `<rect x="${(w/2+2).toFixed(1)}" y="${(w/2+2).toFixed(1)}" width="${(72-w).toFixed(1)}" height="${(96-w).toFixed(1)}" rx="${rx}" fill="none" stroke="${color}" stroke-width="${w.toFixed(1)}"/>`+
-         `<g fill="${color}"><rect x="18" y="${(30-t/2).toFixed(1)}" width="40" height="${t.toFixed(1)}" rx="${lr}"/>${mid}<rect x="18" y="${(70-t/2).toFixed(1)}" width="40" height="${t.toFixed(1)}" rx="${lr}"/></g>${guide}`;
+         `<g fill="${color}"><rect x="18" y="${(30-t/2).toFixed(1)}" width="40" height="${t.toFixed(1)}" rx="${lr}"/>${mid}</g>${bottom}`;
 }
 function markSVG_dom(cssHeight){
-  return `<svg viewBox="0 0 76 100" xmlns="http://www.w3.org/2000/svg" style="height:${cssHeight}">${markShapes('currentColor',S.face)}</svg>`;
+  return `<svg viewBox="0 0 76 100" xmlns="http://www.w3.org/2000/svg" style="height:${cssHeight}">${markShapes('currentColor')}</svg>`;
 }
 function markStandalone(color){
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="76" height="100" viewBox="0 0 76 100">${markShapes(color,false)}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="76" height="100" viewBox="0 0 76 100">${markShapes(color)}</svg>`;
 }
 
 /* ---- preview ---- */
@@ -317,7 +319,7 @@ function renderSVGfile(){
   for(const op of ops){
     if(op.t==='text') body+=`<text x="${op.x.toFixed(1)}" y="${op.y.toFixed(1)}" font-family="'${f.fam}',sans-serif" font-weight="${f.w}" font-size="${fontPx}" dominant-baseline="central" fill="${fg}">${op.s}</text>`;
     else if(op.t==='rect') body+=`<rect x="${op.x.toFixed(1)}" y="${op.y.toFixed(1)}" width="${op.w.toFixed(1)}" height="${op.h.toFixed(1)}" rx="${op.r.toFixed(1)}" fill="${fg}"/>`;
-    else if(op.t==='mark') body+=`<g transform="translate(${op.x.toFixed(1)} ${op.y.toFixed(1)}) scale(${(op.w/76).toFixed(4)} ${(op.h/100).toFixed(4)})">${markShapes(fg,false)}</g>`;
+    else if(op.t==='mark') body+=`<g transform="translate(${op.x.toFixed(1)} ${op.y.toFixed(1)}) scale(${(op.w/76).toFixed(4)} ${(op.h/100).toFixed(4)})">${markShapes(fg)}</g>`;
   }
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.ceil(W)}" height="${Math.ceil(H)}" viewBox="0 0 ${Math.ceil(W)} ${Math.ceil(H)}"><defs><style>@import url('${GF_HREF}');</style></defs>${body}</svg>`;
 }
@@ -352,7 +354,7 @@ async function exportMarkPNG(theme){
 }
 function renderMarkSVGfile(){
   const fg=INK, markW=76, markH=100, pad=12, W=markW+2*pad, H=markH+2*pad;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><g transform="translate(${pad} ${pad})">${markShapes(fg,false)}</g></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><g transform="translate(${pad} ${pad})">${markShapes(fg)}</g></svg>`;
 }
 function exportMarkSVG(){const svg=renderMarkSVGfile();dl(URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'})),'de-link-mark.svg');mStatus('saved de-link-mark.svg');}
 function exportCfg(){const j=JSON.stringify({...S,font:FONTS[S.fontIdx].fam,_v:1},null,2);dl(URL.createObjectURL(new Blob([j],{type:'application/json'})),'de-link-config.json');status('saved de-link-config.json');}
@@ -360,7 +362,7 @@ function importCfg(file){
   const r=new FileReader();
   r.onload=()=>{try{
     const o=JSON.parse(r.result);
-    ['layout','size','gap','wt','rad','broken','dark','face'].forEach(k=>{if(k in o)S[k]=o[k];});
+    ['layout','size','gap','wt','rad','broken','dark','smile'].forEach(k=>{if(k in o)S[k]=o[k];});
     if('fontIdx' in o) S.fontIdx=o.fontIdx;
     if('font' in o){const i=FONTS.findIndex(f=>f.fam===o.font);if(i>=0)S.fontIdx=i;}
     if(!(S.fontIdx>=0&&S.fontIdx<FONTS.length))S.fontIdx=0;
@@ -389,7 +391,7 @@ function syncControls(){
   tg.forEach(b=>{const t=b.dataset.t;b.classList.toggle('on',!!S[t]);
     if(t==='broken')b.textContent='broken line: '+(S.broken?'on':'off');
     if(t==='dark')b.textContent='theme: '+(S.dark?'dark':'light');
-    if(t==='face')b.textContent='show face: '+(S.face?'on':'off');});
+    if(t==='smile')b.textContent='smile: '+(S.smile?'on':'off');});
   buildFontRow();
 }
 
@@ -398,7 +400,7 @@ SLIDERS.forEach(([id,out,fmt])=>{const el=document.getElementById(id),o=document
 document.querySelectorAll('#toggles button').forEach(b=>b.onclick=()=>{const t=b.dataset.t;S[t]=!S[t];
   if(t==='broken')b.textContent='broken line: '+(S.broken?'on':'off');
   if(t==='dark')b.textContent='theme: '+(S.dark?'dark':'light');
-  if(t==='face')b.textContent='show face: '+(S.face?'on':'off');
+  if(t==='smile')b.textContent='smile: '+(S.smile?'on':'off');
   b.classList.toggle('on',!!S[t]);render();});
 
 document.getElementById('pngLight').onclick=()=>exportPNG('light');
