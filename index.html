@@ -46,7 +46,8 @@ h1{font-family:"Baloo 2",sans-serif;font-weight:700;font-size:clamp(20px,4.4vw,2
   font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--slate);opacity:.85}
 .stage.dark .readings{color:#9aa0ad}
 
-.panel{margin-top:16px;display:grid;gap:18px}
+.panel{margin-top:16px;display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+.panel>*{min-width:0}
 .block .rowlabel{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
 .seg{display:flex;flex-wrap:wrap;gap:8px}
 .seg button{font-family:inherit;font-size:12.5px;padding:0 14px;min-height:42px;border-radius:11px;
@@ -55,7 +56,7 @@ h1{font-family:"Baloo 2",sans-serif;font-weight:700;font-size:clamp(20px,4.4vw,2
 .seg button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .seg button:active{transform:translateY(1px)}
 
-.fonts{display:flex;gap:9px;overflow-x:auto;padding:2px 2px 8px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+.fonts{display:flex;gap:9px;overflow-x:auto;min-width:0;padding:2px 2px 8px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
 .fonts::-webkit-scrollbar{height:6px}
 .fonts::-webkit-scrollbar-thumb{background:var(--surface-2);border-radius:99px}
 .fonts button{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);border-radius:13px;
@@ -65,12 +66,12 @@ h1{font-family:"Baloo 2",sans-serif;font-weight:700;font-size:clamp(20px,4.4vw,2
 .fonts .fprev{font-weight:800;font-size:20px;line-height:1;color:var(--fg)}
 .fonts .fname{font-family:inherit;font-size:9.5px;letter-spacing:.04em;color:var(--muted);margin-top:7px;white-space:nowrap}
 
-.sliders{display:grid;grid-template-columns:1fr;gap:16px}
-@media(min-width:560px){.sliders{grid-template-columns:1fr 1fr;gap:16px 22px}}
-.ctl{display:flex;flex-direction:column;gap:9px}
+.sliders{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+@media(min-width:560px){.sliders{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px 22px}}
+.ctl{display:flex;flex-direction:column;gap:9px;min-width:0}
 .ctl .lab{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;color:var(--muted)}
 .ctl .lab b{color:var(--fg);font-weight:400;font-variant-numeric:tabular-nums}
-input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:99px;
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;min-width:0;height:6px;border-radius:99px;
   background:var(--track);outline-offset:6px;cursor:pointer;margin:8px 0}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;
   background:var(--fg);cursor:pointer;border:4px solid var(--bg);box-shadow:0 0 0 1px var(--line)}
@@ -123,7 +124,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 
     <div class="sliders">
       <div class="ctl"><div class="lab"><span>mark size</span><b id="vSize"></b></div>
-        <input type="range" id="size" min="28" max="240" value="115" aria-label="mark size"></div>
+        <input type="range" id="size" min="75" max="375" value="115" aria-label="mark size"></div>
       <div class="ctl"><div class="lab"><span>gap</span><b id="vGap"></b></div>
         <input type="range" id="gap" min="0" max="80" value="22" aria-label="gap"></div>
       <div class="ctl"><div class="lab"><span>line weight</span><b id="vWt"></b></div>
@@ -238,7 +239,7 @@ function render(){
     comp.innerHTML=`<div class="mark">${markSVG_dom(px+'px')}</div>`;
     readings.style.display='block';
   } else if(S.layout==='inword'){
-    const h=(Math.min(S.size/100,1.5)*0.8).toFixed(3)+'em';
+    const h=((S.size/100)*0.8).toFixed(3)+'em';
     comp.innerHTML=`<span class="wm" style="${wmStyle}">de<span class="sep" style="width:auto;margin:0 .05em"><span class="mark" style="height:${h};display:inline-flex">${markSVG_dom('100%')}</span></span>link</span>`;
     readings.style.display='none';
   } else {
@@ -260,7 +261,7 @@ function computeLayout(fontPx){
   let markH=(S.size/100)*fontPx, markW=markH*0.76, gap=(S.gap/100)*fontPx;
   let ops=[], W, H, cy;
   if(S.layout==='inword'){
-    markH=Math.min(S.size/100,1.5)*0.8*fontPx; markW=markH*0.76;
+    markH=(S.size/100)*0.8*fontPx; markW=markH*0.76;
     const ip=0.05*fontPx, contentW=wDe+ip+markW+ip+wLk;
     W=contentW+2*pad; H=Math.max(lineH,markH)+2*pad; cy=H/2; let x=pad;
     ops.push({t:'text',s:'de',x,y:cy}); x+=wDe+ip;
