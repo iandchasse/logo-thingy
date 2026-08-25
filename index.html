@@ -8,7 +8,8 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-12 0 100 100'%3E%3Crect x='6' y='6' width='64' height='88' rx='14' fill='none' stroke='%238be0c4' stroke-width='7'/%3E%3Cg fill='%238be0c4'%3E%3Crect x='18' y='26.5' width='40' height='7' rx='3.5'/%3E%3Crect x='18' y='46.5' width='15' height='7' rx='3.5'/%3E%3Crect x='43' y='46.5' width='15' height='7' rx='3.5'/%3E%3Crect x='18' y='66.5' width='40' height='7' rx='3.5'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link id="gf" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Inter:wght@700;800&family=Baloo+2:wght@700;800&family=Poppins:wght@700;800&family=Nunito:wght@700;800&family=Outfit:wght@700;800&family=Rubik:wght@700;800&family=Quicksand:wght@600;700&family=Fredoka:wght@600;700&family=Sora:wght@700;800&family=Manrope:wght@700;800&family=Space+Grotesk:wght@700&family=Lexend:wght@700;800&family=Urbanist:wght@700;800&family=Figtree:wght@700;800&family=Montserrat:wght@700;800&family=DM+Sans:wght@700;800&family=Comfortaa:wght@700&family=Josefin+Sans:wght@700&family=Archivo:wght@700;800&family=Bricolage+Grotesque:wght@700;800&family=Onest:wght@700;800&family=Hanken+Grotesk:wght@700;800&family=Schibsted+Grotesk:wght@700;800&family=Gabarito:wght@700;800&family=Red+Hat+Display:wght@700;800&family=Albert+Sans:wght@700;800&family=Kanit:wght@700;800&family=Syne:wght@700;800&family=Unbounded:wght@700;800&family=Space+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet">
+<link id="gf" rel="stylesheet">
 <style>
 :root{
   /* logo colors — must match the JS INK/PAPER used by PNG/SVG export */
@@ -262,8 +263,95 @@ const FONTS=[
   {fam:"Kanit",             w:800, tag:"bold"},
   {fam:"Syne",              w:800, tag:"display"},
   {fam:"Unbounded",         w:800, tag:"wide"},
+  {fam:"Work Sans",         w:800, tag:"sans"},
+  {fam:"Mulish",            w:800, tag:"minimal"},
+  {fam:"Karla",             w:800, tag:"grotesk"},
+  {fam:"Assistant",         w:800, tag:"light"},
+  {fam:"Barlow",            w:800, tag:"industrial"},
+  {fam:"Barlow Semi Condensed", w:800, tag:"condensed"},
+  {fam:"Cabin",             w:700, tag:"rounded"},
+  {fam:"Catamaran",         w:800, tag:"tall"},
+  {fam:"Fira Sans",         w:800, tag:"technical"},
+  {fam:"Heebo",             w:800, tag:"neutral"},
+  {fam:"IBM Plex Sans",     w:700, tag:"corporate"},
+  {fam:"Jost",              w:800, tag:"geometric"},
+  {fam:"Libre Franklin",    w:800, tag:"classic"},
+  {fam:"Maven Pro",         w:800, tag:"rounded"},
+  {fam:"Mukta",             w:800, tag:"clean"},
+  {fam:"Overpass",          w:800, tag:"highway"},
+  {fam:"PT Sans",           w:700, tag:"sturdy"},
+  {fam:"Public Sans",       w:800, tag:"govt"},
+  {fam:"Raleway",           w:800, tag:"elegant"},
+  {fam:"Readex Pro",        w:700, tag:"soft"},
+  {fam:"Saira",             w:800, tag:"square"},
+  {fam:"Saira Condensed",   w:700, tag:"narrow"},
+  {fam:"Signika",           w:700, tag:"friendly"},
+  {fam:"Sen",               w:800, tag:"modern"},
+  {fam:"League Spartan",    w:800, tag:"geometric"},
+  {fam:"Titillium Web",     w:700, tag:"techy"},
+  {fam:"Be Vietnam Pro",    w:800, tag:"crisp"},
+  {fam:"Golos Text",        w:800, tag:"neutral"},
+  {fam:"Instrument Sans",   w:700, tag:"tidy"},
+  {fam:"Big Shoulders Display", w:800, tag:"poster"},
+  {fam:"Antonio",           w:700, tag:"condensed"},
+  {fam:"Oswald",            w:700, tag:"condensed"},
+  {fam:"Exo 2",             w:800, tag:"tech"},
+  {fam:"Encode Sans",       w:800, tag:"versatile"},
+  {fam:"Cairo",             w:800, tag:"rounded"},
+  {fam:"Changa",            w:800, tag:"modern"},
+  {fam:"Prompt",            w:800, tag:"geometric"},
+  {fam:"Sarabun",           w:700, tag:"readable"},
+  {fam:"Chakra Petch",      w:700, tag:"tech"},
+  {fam:"Teko",              w:700, tag:"tall"},
+  {fam:"Yanone Kaffeesatz", w:700, tag:"condensed"},
+  {fam:"Fjalla One",        w:400, tag:"condensed"},
+  {fam:"Anton",             w:400, tag:"heavy"},
+  {fam:"Staatliches",       w:400, tag:"tall"},
+  {fam:"Archivo Black",     w:400, tag:"black"},
+  {fam:"Passion One",       w:700, tag:"heavy"},
+  {fam:"Paytone One",       w:400, tag:"rounded"},
+  {fam:"Titan One",         w:400, tag:"chunky"},
+  {fam:"Bowlby One",        w:400, tag:"fat"},
+  {fam:"Luckiest Guy",      w:400, tag:"comic"},
+  {fam:"Righteous",         w:400, tag:"retro"},
+  {fam:"Concert One",       w:400, tag:"rounded"},
+  {fam:"Sigmar One",        w:400, tag:"bold"},
+  {fam:"Bungee",            w:400, tag:"signage"},
+  {fam:"Chewy",             w:400, tag:"playful"},
+  {fam:"Varela Round",      w:400, tag:"round"},
+  {fam:"Baloo Bhai 2",      w:800, tag:"rounded"},
+  {fam:"Baloo Da 2",        w:800, tag:"rounded"},
+  {fam:"Baloo Paaji 2",     w:800, tag:"rounded"},
+  {fam:"Baloo Tamma 2",     w:800, tag:"rounded"},
+  {fam:"Baloo Thambi 2",    w:800, tag:"rounded"},
+  {fam:"M PLUS Rounded 1c", w:800, tag:"round"},
+  {fam:"Arvo",              w:700, tag:"slab"},
+  {fam:"Bitter",            w:800, tag:"slab"},
+  {fam:"Zilla Slab",        w:700, tag:"slab"},
+  {fam:"Roboto Slab",       w:800, tag:"slab"},
+  {fam:"Aleo",              w:700, tag:"slab"},
+  {fam:"Alfa Slab One",     w:400, tag:"heavy slab"},
+  {fam:"Playfair Display",  w:800, tag:"serif"},
+  {fam:"Merriweather",      w:700, tag:"serif"},
+  {fam:"Lora",              w:700, tag:"serif"},
+  {fam:"PT Serif",          w:700, tag:"serif"},
+  {fam:"Domine",            w:700, tag:"serif"},
+  {fam:"Spectral",          w:800, tag:"serif"},
+  {fam:"Cormorant Garamond",w:700, tag:"serif"},
+  {fam:"Libre Baskerville", w:700, tag:"serif"},
+  {fam:"Fraunces",          w:800, tag:"serif"},
+  {fam:"Newsreader",        w:700, tag:"serif"},
+  {fam:"Bodoni Moda",       w:800, tag:"didone"},
+  {fam:"DM Serif Display",  w:400, tag:"serif"},
+  {fam:"Prata",             w:400, tag:"didone"},
+  {fam:"Frank Ruhl Libre",  w:800, tag:"serif"},
+  {fam:"Alegreya",          w:800, tag:"serif"},
+  {fam:"Bebas Neue",        w:400, tag:"tall"},
+  {fam:"Anybody",           w:800, tag:"variable"},
 ];
-const GF_HREF=document.getElementById('gf').href;
+function gfURL(fonts){return 'https://fonts.googleapis.com/css2?'+fonts.map(f=>'family='+f.fam.replace(/ /g,'+')+':wght@'+f.w).join('&')+'&display=swap';}
+const GF_HREF=gfURL(FONTS);
+document.getElementById('gf').href=GF_HREF;
 const DEFAULTS={layout:"left",size:115,gap:22,wt:55,rad:11,vert:0,dash:"bar",broken:true,dark:true,markOverride:false,markColor:"#8be0c4",fontIdx:0};
 const DASH_GLYPH={hyphen:"-",en:"–",em:"—",dot:"·"};
 const LS_KEY="delink-studio-v1";
@@ -444,7 +532,7 @@ function renderSVGfile(){
     else if(op.t==='rect') body+=`<rect x="${op.x.toFixed(1)}" y="${op.y.toFixed(1)}" width="${op.w.toFixed(1)}" height="${op.h.toFixed(1)}" rx="${op.r.toFixed(1)}" fill="${op.c||fg}"/>`;
     else if(op.t==='mark') body+=`<g transform="translate(${op.x.toFixed(1)} ${op.y.toFixed(1)}) scale(${(op.w/76).toFixed(4)} ${(op.h/100).toFixed(4)})">${markShapes(markCol(fg))}</g>`;
   }
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.ceil(W)}" height="${Math.ceil(H)}" viewBox="0 0 ${Math.ceil(W)} ${Math.ceil(H)}"><defs><style>@import url('${GF_HREF}');</style></defs>${body}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.ceil(W)}" height="${Math.ceil(H)}" viewBox="0 0 ${Math.ceil(W)} ${Math.ceil(H)}"><defs><style>@import url('${gfURL([f])}');</style></defs>${body}</svg>`;
 }
 
 /* ---- download helpers ---- */
